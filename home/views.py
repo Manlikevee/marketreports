@@ -168,49 +168,58 @@ def get_table_9a_datagain(request):
     today = timezone.now().date()
 
     # Check if today's data for Top Gainers is already saved
-    top_gainers_data = market_data.objects.filter(product_class='Top_Gainers', as_at__date=today).order_by('-id').first()
-    if top_gainers_data:
-        print('Top Gainers data already saved')
-    else:
-        # Fetch data from the Top Gainers external API
-        response_gainers = requests.get(
-            'https://doclib.ngxgroup.com/REST/api/statistics/equities/?market=&sector=&orderby=TopGainers&pageSize=300&pageNo=0')
-        if response_gainers.status_code == 200:
-            data_gainers = response_gainers.json()
-            print('Fetched Top Gainers data')
+    top_gainers_data = market_data.objects.filter(product_class='Top_Gainers', as_at__date=today).order_by(
+        '-id').first()
 
-            # Save the fetched data to the database
-            market_data.objects.create(product_class='Top_Gainers', product_data=data_gainers)
-            print('Top Gainers data saved')
-        else:
-            return Response({'error': 'Failed to retrieve data from the Top Gainers API'}, status=404)
+    # If data exists for today, delete it to replace with the latest fetched data
+    if top_gainers_data:
+        top_gainers_data.delete()
+        print('Existing Top Gainers data deleted for today')
+
+    # Fetch data from the Top Gainers external API
+    response_gainers = requests.get(
+        'https://doclib.ngxgroup.com/REST/api/statistics/equities/?market=&sector=&orderby=TopGainers&pageSize=300&pageNo=0'
+    )
+    if response_gainers.status_code == 200:
+        data_gainers = response_gainers.json()
+        print('Fetched Top Gainers data')
+
+        # Save the newly fetched data to the database
+        top_gainers_data = market_data.objects.create(product_class='Top_Gainers', product_data=data_gainers,
+                                                      as_at=today)
+        print('Top Gainers data saved')
+    else:
+        return Response({'error': 'Failed to retrieve data from the Top Gainers API'}, status=404)
 
     # Check if today's data for Top Losers is already saved
     top_losers_data = market_data.objects.filter(product_class='Top_Losers', as_at__date=today).order_by('-id').first()
-    if top_losers_data:
-        print('Top Losers data already saved')
-    else:
-        # Fetch data from the Top Losers external API
-        response_losers = requests.get(
-            'https://doclib.ngxgroup.com/REST/api/statistics/equities/?market=&sector=&orderby=Losers&pageSize=300&pageNo=0')
-        if response_losers.status_code == 200:
-            data_losers = response_losers.json()
-            print('Fetched Top Losers data')
 
-            # Save the fetched data to the database
-            market_data.objects.create(product_class='Top_Losers', product_data=data_losers)
-            print('Top Losers data saved')
-        else:
-            return Response({'error': 'Failed to retrieve data from the Top Losers API'}, status=404)
+    # If data exists for today, delete it to replace with the latest fetched data
+    if top_losers_data:
+        top_losers_data.delete()
+        print('Existing Top Losers data deleted for today')
+
+    # Fetch data from the Top Losers external API
+    response_losers = requests.get(
+        'https://doclib.ngxgroup.com/REST/api/statistics/equities/?market=&sector=&orderby=Losers&pageSize=300&pageNo=0'
+    )
+    if response_losers.status_code == 200:
+        data_losers = response_losers.json()
+        print('Fetched Top Losers data')
+
+        # Save the newly fetched data to the database
+        top_losers_data = market_data.objects.create(product_class='Top_Losers', product_data=data_losers, as_at=today)
+        print('Top Losers data saved')
+    else:
+        return Response({'error': 'Failed to retrieve data from the Top Losers API'}, status=404)
 
     # Combine both Top Gainers and Top Losers data into a single response
     response_data = {
-        'top_gainers': top_gainers_data.product_data if top_gainers_data else data_gainers,
-        'top_losers': top_losers_data.product_data if top_losers_data else data_losers
+        'top_gainers': top_gainers_data.product_data,
+        'top_losers': top_losers_data.product_data
     }
 
     return Response(response_data)
-
 @api_view(['GET'])
 def scrapengx(request):
     response = requests.get(BASE_URLs)
@@ -243,29 +252,6 @@ def get_table_7_data(request):
         return Response({'error': 'Failed to retrieve table data or table not found'}, status=404)
 
 
-@api_view(['GET'])
-def get_table_9a_data(request):
-    today = timezone.now().date()
-
-    # Check if today's data is already saved
-    mymarketdata = market_data.objects.filter(product_class='Equities_Price_List', as_at__date=today).order_by('-id').first()
-    if mymarketdata:
-        print('already savedaaaaaaaa')
-        return Response(mymarketdata.product_data)
-
-    # Fetch data from the external API
-    response = requests.get(
-        'https://doclib.ngxgroup.com/REST/api/statistics/equities/?market=&sector=&orderby=&pageSize=1900&pageNo=0')
-    if response.status_code == 200:
-        data = response.json()
-        print('still ran')
-
-        # Save the fetched data to the database
-        market_data.objects.create(product_class='Equities_Price_List', product_data=data)
-        print('created')
-        return Response(data)
-    else:
-        return Response({'error': 'Failed to retrieve data from the external API'}, status=404)
 
 
 def run_table_7_data_check():
@@ -301,6 +287,37 @@ def run_table_8_data_check():
     else:
         print('Failed to retrieve table 8 data')
         return None
+
+
+@api_view(['GET'])
+def get_table_9a_data(request):
+    today = timezone.now().date()
+
+    # Check if today's data is already saved
+    mymarketdata = market_data.objects.filter(product_class='Equities_Price_List', as_at__date=today).order_by(
+        '-id').first()
+
+    if mymarketdata:
+        # If data exists for today, delete it to replace with the latest fetched data
+        mymarketdata.delete()
+        print('Existing data deleted for today')
+
+    # Fetch data from the external API
+    response = requests.get(
+        'https://doclib.ngxgroup.com/REST/api/statistics/equities/?market=&sector=&orderby=&pageSize=1900&pageNo=0'
+    )
+
+    if response.status_code == 200:
+        data = response.json()
+        print('New data fetched')
+
+        # Save the newly fetched data to the database
+        market_data.objects.create(product_class='Equities_Price_List', product_data=data, as_at=today)
+        print('New data saved')
+
+        return Response(data)
+    else:
+        return Response({'error': 'Failed to retrieve data from the external API'}, status=404)
 
 def run_table_9_data_check():
     today = timezone.now().date()
