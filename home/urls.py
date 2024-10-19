@@ -16,4 +16,5 @@ urlpatterns = [
     path('get_table_9a_datagain', get_table_9a_datagain, name='get_table_9a_datagain'),
     path('scrape-nafem/', get_nafem_closing_rate, name='scrape-nafem'),
 
+
     ]
