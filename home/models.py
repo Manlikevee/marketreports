@@ -12,7 +12,11 @@ from django.utils.timezone import now
 #         return self.name
 
 
-
+class fx_data(models.Model):
+    closingrate = models.CharField(max_length=255, blank=True, null=True)
+    as_at = models.DateTimeField(default=now)
+    def __str__(self):
+        return self.as_at
 
 
 class market_data(models.Model):

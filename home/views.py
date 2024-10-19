@@ -4,7 +4,7 @@ from django.shortcuts import render, redirect
 from django.template.defaulttags import now
 from django.utils import timezone
 
-from .models import market_data
+from .models import market_data, fx_data
 
 
 # from mykeycloakdjango.home.models import market_data
@@ -404,3 +404,58 @@ def get_table_12_data(request):
         return Response(data)
     else:
         return Response({'error': 'Failed to retrieve table data or table not found'}, status=404)
+
+
+
+
+def scrape_closing_rate():
+    today = timezone.now().date()
+    # Define the URL to scrape
+    url = 'https://fmdqgroup.com/exchange/'
+
+    # Make an HTTP GET request to fetch the HTML content
+    response = requests.get(url)
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+    # Search for text containing "NAFEM Closing rate"
+    text = soup.find(text=lambda t: 'NAFEM Closing rate' in t)
+
+    if text:
+        # Assuming the format is "NAFEM Closing rate $/₦1600.78", we extract the rate
+        closing_rate_text = text.strip()
+
+        # Extract the numeric value, splitting by "$" and "₦"
+        closing_rate = closing_rate_text.split('$')[1].split('₦')[1].strip()
+
+        # Convert to a float for easier processing
+        closing_rate = float(closing_rate)
+
+        # Get today's date (without time)
+
+        # Check if the data for today already exists
+        existing_record = fx_data.objects.filter(as_at__date=today).first()
+
+        if existing_record:
+            # If a record for today exists, update it
+            existing_record.closingrate = closing_rate
+            existing_record.save()
+            message = "Updated today's NAFEM closing rate."
+        else:
+            # If no record for today, create a new one
+            fx_data.objects.create(closingrate=closing_rate, as_at=today)
+            message = "Created new record for today's NAFEM closing rate."
+
+        # Return response with the updated or created data
+        return Response({
+            'message': message,
+            'closing_rate': closing_rate,
+            'as_at': today
+        })
+    else:
+        return Response({'error': 'Could not find the NAFEM Closing rate on the page.'}, status=404)
+
+
+@api_view(['GET'])
+def get_nafem_closing_rate(request):
+    return scrape_closing_rate()
+
