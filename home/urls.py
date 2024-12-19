@@ -15,6 +15,7 @@ urlpatterns = [
     path('get_table_9a_data', get_table_9a_data, name='get_table_9a_data'),
     path('get_table_9a_datagain', get_table_9a_datagain, name='get_table_9a_datagain'),
     path('scrape-nafem/', get_nafem_closing_rate, name='scrape-nafem'),
-
+    path('api/form-submission/', FormSubmissionView.as_view(), name='form_submission'),
+    path('account-opening-submissions/', fetch_all_account_opening_submissions, name='fetch_all_submissions'),
 
     ]

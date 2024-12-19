@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Account_opening_Submission, market_data, fx_data
+from .models import market_data, fx_data, Account_opening_Submission
 
 #
 # # Register your models here.
