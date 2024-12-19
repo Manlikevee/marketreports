@@ -4,7 +4,9 @@ from django.shortcuts import render, redirect
 from django.template.defaulttags import now
 from django.utils import timezone
 
-from .models import market_data, fx_data
+from home.serializer import FormSubmissionSerializer
+
+from .models import Account_opening_Submission, market_data, fx_data
 
 
 # from mykeycloakdjango.home.models import market_data
@@ -459,3 +461,30 @@ def scrape_closing_rate():
 def get_nafem_closing_rate(request):
     return scrape_closing_rate()
 
+
+
+
+class FormSubmissionView(APIView):
+    def post(self, request, *args, **kwargs):
+        data = request.data
+        # Combine first-name and last-name into `name`
+        first_name = data.get('first-name')
+        last_name = data.get('last-name')
+        if not first_name or not last_name:
+            return Response({"status": "error", "message": "First and last names are required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        data['name'] = f"{first_name} {last_name}"
+
+        serializer = FormSubmissionSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "success", "message": "Form data stored successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"status": "error", "message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['GET'])
+def fetch_all_account_opening_submissions(request):
+    submissions = Account_opening_Submission.objects.all()  # Fetch all submissions
+    serializer = FormSubmissionSerializer(submissions, many=True)  # Serialize the data
+    return Response(serializer.data)  # Return serialized data as a response
