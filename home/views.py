@@ -489,7 +489,6 @@ class FormSubmissionView(APIView):
             account_submission = Account_opening_Submission.objects.create(
                 name=name,
                 data=data,  # Save the entire JSON payload
-                created_as_at=now()
             )
         except Exception as e:
             return Response(
