@@ -471,20 +471,30 @@ def get_nafem_closing_rate(request):
 class FormSubmissionView(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
-        # Combine first-name and last-name into `name`
+
+        # Validate first-name and last-name
         first_name = data.get('first-name')
         last_name = data.get('last-name')
         if not first_name or not last_name:
-            return Response({"status": "error", "message": "First and last names are required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"status": "error", "message": "First and last names are required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
-        data['name'] = f"{first_name} {last_name}"
+        # Combine first-name and last-name into `name`
+        name = f"{first_name} {last_name}"
 
-        serializer = FormSubmissionSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"status": "success", "message": "Form data stored successfully"}, status=status.HTTP_201_CREATED)
-        return Response({"status": "error", "message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        # Save data directly to the model
+        account_submission = Account_opening_Submission.objects.create(
+            name=name,
+            data=data,  # Save the JSON data directly
+            created_as_at=now()
+        )
 
+        return Response(
+            {"status": "success", "message": "Form data stored successfully", "id": account_submission.id},
+            status=status.HTTP_201_CREATED
+        )
 
 
 @api_view(['GET'])
