@@ -472,7 +472,7 @@ class FormSubmissionView(APIView):
     def post(self, request, *args, **kwargs):
         data = request.data
 
-        # Validate first-name and last-name
+        # Validate required fields: first-name and last-name
         first_name = data.get('first-name')
         last_name = data.get('last-name')
         if not first_name or not last_name:
@@ -480,22 +480,27 @@ class FormSubmissionView(APIView):
                 {"status": "error", "message": "First and last names are required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Combine first-name and last-name into `name`
+
+        # Combine first-name and last-name into a single `name` field
         name = f"{first_name} {last_name}"
 
-        # Save data directly to the model
-        account_submission = Account_opening_Submission.objects.create(
-            name=name,
-            data=data,  # Save the JSON data directly
-            created_as_at=now()
-        )
+        # Save the data to the model
+        try:
+            account_submission = Account_opening_Submission.objects.create(
+                name=name,
+                data=data,  # Save the entire JSON payload
+                created_as_at=now()
+            )
+        except Exception as e:
+            return Response(
+                {"status": "error", "message": f"An error occurred while saving: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         return Response(
             {"status": "success", "message": "Form data stored successfully", "id": account_submission.id},
             status=status.HTTP_201_CREATED
         )
-
 
 @api_view(['GET'])
 def fetch_all_account_opening_submissions(request):
