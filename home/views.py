@@ -506,3 +506,11 @@ def fetch_all_account_opening_submissions(request):
     submissions = Account_opening_Submission.objects.all()  # Fetch all submissions
     serializer = FormSubmissionSerializer(submissions, many=True)  # Serialize the data
     return Response(serializer.data)  # Return serialized data as a response
+
+from django.shortcuts import get_object_or_404
+
+@api_view(['GET'])
+def fetch_account_opening_submission_by_id(request, id):
+    submission = get_object_or_404(Account_opening_Submission, id=id)  # Fetch the specific submission
+    serializer = FormSubmissionSerializer(submission)  # Serialize the data
+    return Response(serializer.data)  # Return serialized data as a response

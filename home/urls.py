@@ -17,5 +17,6 @@ urlpatterns = [
     path('scrape-nafem/', get_nafem_closing_rate, name='scrape-nafem'),
     path('api/form-submission/', FormSubmissionView.as_view(), name='form_submission'),
     path('account-opening-submissions/', fetch_all_account_opening_submissions, name='fetch_all_submissions'),
+    path('submissions/<int:id>/', fetch_account_opening_submission_by_id, name='fetch_submission_by_id'),
 
     ]
